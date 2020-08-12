@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-CN">
+
+
+<head>
+  <meta charset="utf-8" />
+   
+  <meta name="keywords" content="Bioinformatics,Gene,Biology,Python,Linux" />
+   
+  <meta name="description" content="Now I am a bioinformatics PhD candidate of CUHK, and used to be a bioinformatics engineer in several companies, Annoroad, Acordx, Oumeng and Aegicare." />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    Deep learning enables accurate clustering with batch effect removal in single-cell RNA-seq analysis |  Now I am a bioinformatics PhD candidate of CUHK, and used to be a bioinformatics engineer in several companies, Annoroad, Acordx, Oumeng and Aegicare.
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/favicon.ico" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="Big Bang" type="application/atom+xml">
+<link href="https://cdn.bootcss.com/KaTeX/0.11.1/katex.min.css" rel="stylesheet" /></head>
+
+</html>
+
+<body>
+  <div id="app">
+    
+      
+    <main class="content on">
+      <section class="outer">
+  <article
+  id="post-Deep-learning-enables-accurate-clustering-with-batch-effect-removal-in-single-cell-RNA-seq-analysis"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  Deep learning enables accurate clustering with batch effect removal in single-cell RNA-seq analysis
+</h1>
+ 
+
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2020/08/07/Deep-learning-enables-accurate-clustering-with-batch-effect-removal-in-single-cell-RNA-seq-analysis/" class="article-date">
+  <time datetime="2020-08-07T08:14:22.000Z" itemprop="datePublished">2020-08-07</time>
+</a>   
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> 字数统计:</span>
+            <span class="post-count">1.8k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> 阅读时长≈</span>
+            <span class="post-count">6 分钟</span>
+        </span>
+    </span>
+</div>
+ 
+    </div>
+      
+    <div class="tocbot"></div>
+
+
+
+
+  
+    <div class="article-entry" itemprop="articleBody">
+       
+  <p>[TOC]</p>
+<p><img src="https://cdn.jsdelivr.net/gh/btrspg/images@master/uPic/image-20200807161752087.png" alt="image-20200807161752087"></p>
+<p>单细胞测序的数据是越来越多，随之而来的一些困难也逐渐明显，对于大量非同批次的单细胞数据直接分析，可能分析的结果都是批次效应导致的偏差结果。而这篇文章所发布的软件，就是利用<code>deep learning</code>来解决这一难题，<code>DESC</code>通过逐步训练来逐步消除批次效应。作者展示了该方法在不同数据上均能展示良好的性能，下面就来一起看看。</p>
+<h2 id="workflow">Workflow</h2>
+<p><img src="https://cdn.jsdelivr.net/gh/btrspg/images@master/uPic/image-20200807165300532.png" alt="image-20200807165300532"></p>
+<p>整个工作流程不算特别的复杂。</p>
+<p><code>DESE</code>的clustering是基于<code>autoencoder</code>的bottleneck nodes来做的，根据这些（降维了的）bottleneck节点作为特征来聚类样本，调整参数，从而最终达到去除批次效应的目的。</p>
+<h2 id="批次效应">批次效应</h2>
+<p>被称为批次效应的影响因素其实很多，并不简简单单的就是我的实验批次（例如这批数据我分几个时间段做的，这不同的时间段就是不同批次）。如下面这批数据所描述的恒河猴视网膜数据一样，来自不同的恒河猴（<code>animal level</code>），来自不同的区域（<code>region level</code>），以及这两个的综合因素（<code>sample level</code>）都算是具有批次效应的因素。这些都会影响到我们后续的单细胞分析中。</p>
+<h2 id="不同数据结果展示">不同数据结果展示</h2>
+<h3 id="恒河猴视网膜数据">恒河猴视网膜数据</h3>
+<p><img src="https://gitee.com/loganylchen/images_pool/raw/master/uPic/99jLNn.png" alt="99jddLNn"></p>
+<p>图中b 表示按照动物的来源（共四只恒河猴）进行标注，可以看出通过<code>DESC</code>去除批次效应后，不同来源的细胞并没有独立出来，而是很好的混合到了一起。图中c 表示按照样本信息（样本+区域）进行标注，图中d 表示按照细胞来源区域进行标注（视网膜凹处，视网膜周围），可以看出来除了有两个聚类是包含大量视网膜外周细胞以外，其他聚类均为混合细胞。</p>
+<p><code>DESC</code>还有一个很大的优势则是，他可以不同给定<code>batch</code>信息，就能够直接去除<code>batch effect</code>，如上图e中所展示，ARI是描述聚类正确性的指标（以后会专门介绍），不同的颜色表示以不同的批次信息为去除批次效应的参数。从上图可以看出，除了<code>DESC</code>及<code>scVI</code>，其他的算法均需要用户给定批次信息才能做到去除批次效应。而<code>scVI</code>即便可以不用提供批次信息就能直接去除批次效应，但是效果却并不好。从中可以看出，<code>DESC</code>是效果最好的，而且当批次的信息为sample的时候（也就是认为批次最多的时候），性能是最好的。（图中的ALL就表示不给出批次信息，盲去）</p>
+<p><img src="https://cdn.jsdelivr.net/gh/btrspg/images@master/uPic/image-20200807171842514.png" alt="image-20200807171842514"></p>
+<p>而用KL divergence（后面也会详细介绍）来判断新能差异，同样能看出，<code>DESC</code>在给定批次信息，不同批次信息及不给定批次信息的去批次效应的效果都是最好的。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/btrspg/images@master/uPic/image-20200807172208195.png" alt="image-20200807172208195"></p>
+<p>在此列出了其他算法在基于<code>region</code>的批次效应去除时的效果，可以看出其他算法有大量的clusters是只包含有一种区域来源细胞的，可见批次效应并没有很好的去除。</p>
+<p>这时，作者比较了<code>DESC</code>和<code>scVI</code>这两个可以不提供批次信息的算法，上图中的顶部<code>DESC</code>的结果，底部是<code>scVI</code>结果，可以很明显的看出，即便没有给出批次信息，<code>DSCE</code>也能很好的将批次效应去除，而对于<code>scVI</code>，结果上就不那么令人满意了。</p>
+<h3 id="不同protocols的胰岛数据">不同protocols的胰岛数据</h3>
+<p>作者找了4个来自不同实验protocols的胰岛数据，来将其合并分析，去除他们之间的批次效应（不同实验方法）</p>
+<ul>
+<li>Fluidigm C1</li>
+<li>SMART-seq2</li>
+<li>CEL-seq</li>
+<li>CEL-seq2</li>
+</ul>
+<p>结果如下：</p>
+<p><img src="https://gitee.com/loganylchen/images_pool/raw/master/uPic/image-20200807173119511.png" alt="image-20200807173119511"></p>
+<p>可以从上图看出，除了<code>DESC</code>,<code>Seurat3.0</code>,<code>CCA</code>以外，其他的算法并不能将它们之间的批次效应很好的去除，而且即便是<code>Seurat3.0</code>这样看上去还不错的算法，一些显著的 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span></span></span></span> 细胞和<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi></mrow><annotation encoding="application/x-tex">\beta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault" style="margin-right:0.05278em;">β</span></span></span></span>细胞分到了一块，说明结果只是差强人意。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/btrspg/images@master/uPic/image-20200807174311775.png" alt="image-20200807174311775"></p>
+<p>我们可以从上图中发现，<code>DESC</code>是逐步将批次效应去除的。</p>
+<h3 id="外界刺激的外周血细胞">外界刺激的外周血细胞</h3>
+<p>这套数据的实验目的就需要好好解释一下。所有的算法在去除批次效应的时候都会害怕去除的太厉害，会不会将我们需要看到的生物学差异也给去除掉了。而在前面几套数据中，我们已经看到了<code>DESC</code>在去除批次效应上的卓越成效，那他会不会是牺牲了很多生物学差异的去除呢，如果是这样，那就得不偿失了。</p>
+<p>所以作者找到另一套数据来说明这个问题，说明自己的算法仅仅是去除了批次效应，生物学差异仍旧很好的保留着。</p>
+<p>作者直接找到了8个样本的外周血细胞，并且一部分作为control，另一部分使用interferon-beta进行刺激。这就相当于保证了批次信息一样，但是实验条件不同。</p>
+<p><img src="https://gitee.com/loganylchen/images_pool/raw/master/uPic/image-20200807175051943.png" alt="image-20200807175051943"></p>
+<p>这样的数据的结果如上图，除了两个clusters，其他的clusters中都是两类细胞均有，而通过上图中的b图发现，这两个clusters是<code>CD14+ monocytes</code>.</p>
+<p>通过差异表达分析可以看出<code>CD14+ monocytes</code>细胞case与control的差异是其他类细胞的很多倍差异。而且之前的研究也表明了，这种细胞在收到刺激后，的确会发生很大的变化，所以将其划分为两个clusters也是没有问题的。</p>
+<p><img src="https://gitee.com/loganylchen/images_pool/raw/master/uPic/image-20200807175341585.png" alt="image-20200807175341585"></p>
+<p>可见<code>DESC</code>可以去除批次效应，而且并不会影响到本身的生物学差异。</p>
+<h3 id="老鼠骨髓先祖细胞">老鼠骨髓先祖细胞</h3>
+<p>单细胞数据还会经常用来做细胞分化的研究，作者使用一套老师的骨髓先祖细胞数据来证明自己的算法并不会影响这一类的分析。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/btrspg/images@master/uPic/image-20200807180005098.png" alt="image-20200807180005098"></p>
+<p>这里需要注意的是上图中的a图，这个图的颜色是根据分类的得分来的，而我们可以发现，分化越厉害的细胞，分类得分越高，所以这个得分也是有生物学意义的。</p>
+<h3 id="单核细胞">单核细胞</h3>
+<p>这个就是主要针对于连续状态细胞进行聚类</p>
+<p><img src="https://gitee.com/loganylchen/images_pool/raw/master/uPic/image-20200808201804291.png" alt="image-20200808201804291"></p>
+<p>上图中表示三个批次的结果，发现只有<code>DESC</code>的结果对于三个批次的细胞时间序列是一致的，并不随着批次的变化而变化。因为上图中的所有数据都来自健康人的外周血，所以应该不会有显著变化，对于其他的结果则明显看出，不同批次的时间序列结果是有差异的。</p>
+<h2 id="性能">性能</h2>
+<p><img src="https://gitee.com/loganylchen/images_pool/raw/master/uPic/image-20200808202034422.png" alt="image-20200808202034422"></p>
+<p>性能的结果就非常明显的提升，不仅在正确率上有显著的提升，内存消耗也减少了，还支持GPU。</p>
+<h2 id="写在最后">写在最后</h2>
+<p>里面还有一些细节并没有搞的特别清楚，还是需要继续研究，不过对于这个软件觉得可玩性还是挺高的。</p>
+ 
+      <!-- reward -->
+      
+      <div id="reword-out">
+        <div id="reward-btn">
+          打赏
+        </div>
+      </div>
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <div class="declare">
+      <ul class="post-copyright">
+        <li>
+          <i class="ri-copyright-line"></i>
+          <strong>版权声明： </strong>
+          本博客所有文章除特别声明外，著作权归作者所有。转载请注明出处！
+        </li>
+      </ul>
+    </div>
+    
+    <footer class="article-footer">
+       
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://btrspg.github.io/2020/08/07/Deep-learning-enables-accurate-clustering-with-batch-effect-removal-in-single-cell-RNA-seq-analysis/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>  
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/batch-effect/" rel="tag">batch effect</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/bioinformatics/" rel="tag">bioinformatics</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/deep-learning/" rel="tag">deep learning</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/literature/" rel="tag">literature</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/single-cell-RNA-seq/" rel="tag">single-cell RNA-seq</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+  <nav class="article-nav">
+    
+      <a href="/2020/08/10/hdf5/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            hdf5格式到底是什么
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2020/03/01/ExpressionSet/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">ExpressionSet</div>
+      </a>
+    
+  </nav>
+
+   
+ 
+     
+</article>
+
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2019-2020
+        <i class="ri-heart-fill heart_icon"></i> Logan
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        由 <a href="https://hexo.io" target="_blank">Hexo</a> 强力驱动
+        <span class="division">|</span>
+        主题 - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>访问人数:<span id="busuanzi_value_site_uv"></span></s>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>浏览次数:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="Big Bang"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags/bioinformatics/">生物信息</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/aboutme">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯冰美式吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.jpeg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechatpay.jpeg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+      tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+  });
+
+  MathJax.Hub.Queue(function() {
+      var all = MathJax.Hub.getAllJax(), i;
+      for(i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+      }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.6/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script>
+  var ayerConfig = {
+    mathjax: true
+  }
+</script>
+
+<!-- Katex -->
+
+
+    
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js"></script>
+        
+    
+
+
+<!-- busuanzi  -->
+
+
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+
+
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+<!-- CanvasBackground -->
+
+
+    
+  </div>
+</body>
+
+</html>
